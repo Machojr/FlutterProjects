@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/user_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'utils/app_theme.dart';
@@ -21,7 +22,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // UserProvider must be created first since AuthProvider depends on it
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        
+        // AuthProvider depends on UserProvider, so it's created after
+        // AuthProvider automatically initializes user profile when auth state changes
+        ChangeNotifierProxyProvider<UserProvider, AuthProvider>(
+          create: (context) => AuthProvider(
+            context.read<UserProvider>(),
+          ),
+          update: (context, userProvider, authProvider) =>
+              authProvider ?? AuthProvider(userProvider),
+        ),
       ],
       child: MaterialApp(
         title: AppConstants.appName,
